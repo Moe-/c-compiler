@@ -4,6 +4,9 @@ use std::io::{Error, ErrorKind};
 use std::process::Command;
 use std::process::Output;
 
+pub mod lexer;
+
+#[derive(PartialEq)]
 enum Stage {
     Lex,
     Parse,
@@ -11,14 +14,18 @@ enum Stage {
     All,
 }
 
-fn compile(preprocessed: &str, assembly: &str) {
-
+fn compile(preprocessed: &str, assembly: &str, stage: &Stage) -> std::io::Result<()> {
+    let result = lexer::lexer::lex(preprocessed);
+    if result.is_err() || *stage == Stage::Lex {
+        return result;
+    }
+    Ok(())
 }
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
-    let mut stage = if args.iter().any(|x| x == "--lex") {
+    let stage = if args.iter().any(|x| x == "--lex") {
         Stage::Lex
     } else if args.iter().any(|x| x == "--parse") {
         Stage::Parse
@@ -51,7 +58,10 @@ fn main() -> std::io::Result<()> {
     let mut output = input.clone();
     output.pop();
     output.pop();
-    compile(&preprocessed, &assembly);
+    let result = compile(&preprocessed, &assembly, &stage);
+    if result.is_err() || stage != Stage::All {
+        return result;
+    }
     fs::remove_file(preprocessed)?;
 
     
