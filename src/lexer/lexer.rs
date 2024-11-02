@@ -1,10 +1,11 @@
 
+use std::collections::VecDeque;
 use std::fs;
-use std::{clone, io::{Error, ErrorKind}};
+use std::io::{Error, ErrorKind};
 use regex::Regex;
 
 #[derive(Clone,PartialEq,Debug,Copy)]
-enum Token {
+pub enum Token {
     Identifier,
     Constant,
     IntKeyword,
@@ -51,18 +52,17 @@ impl Token {
 }
 
 #[derive(Debug)]
-struct TokenValue {
-    token: Token,
-    data: Option<String>,
+pub struct TokenValue {
+    pub token: Token,
+    pub data: Option<String>,
 }
 
-pub fn lex (preprocessed: &str) -> std::io::Result<()> {
+pub fn lex (preprocessed: &str, debug_mode: bool) -> std::io::Result<VecDeque<TokenValue>> {
     let mut to_parse = fs::read_to_string(preprocessed)?;
     let whitespace = Regex::new(r"\A\s+").unwrap();
     let regex = Token::regex();
-    let mut token: Vec<TokenValue> = Vec::new();
+    let mut tokens: VecDeque<TokenValue> = VecDeque::new();
     while !to_parse.is_empty() {
-        println!("{}", to_parse);
         if whitespace.is_match(&to_parse) {
             to_parse = String::from(to_parse.trim_start());
         } else {
@@ -91,16 +91,13 @@ pub fn lex (preprocessed: &str) -> std::io::Result<()> {
 
             let res = candidates.first().unwrap();
             if res.0 == Token::Identifier || res.0 == Token::Constant {
-                token.push(TokenValue { token: res.0, data: Some(String::from(res.1.as_str())) });
+                tokens.push_back(TokenValue { token: res.0, data: Some(String::from(res.1.as_str())) });
             } else {
-                token.push(TokenValue { token: res.0, data: None });
+                tokens.push_back(TokenValue { token: res.0, data: None });
             }
-            
-            println!("{:?}", candidates);
             to_parse = to_parse[res.1.end()..].to_string();
         }
     }
-    println!("{:?}", token);
-    println!("{}", preprocessed);
-    Ok(())
+    if debug_mode {println!("{:?}", tokens)};
+    Ok(tokens)
 }

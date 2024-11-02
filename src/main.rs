@@ -2,9 +2,9 @@ use std::env;
 use std::fs;
 use std::io::{Error, ErrorKind};
 use std::process::Command;
-use std::process::Output;
 
 pub mod lexer;
+pub mod parser;
 
 #[derive(PartialEq)]
 enum Stage {
@@ -14,11 +14,20 @@ enum Stage {
     All,
 }
 
-fn compile(preprocessed: &str, assembly: &str, stage: &Stage) -> std::io::Result<()> {
-    let result = lexer::lexer::lex(preprocessed);
+fn compile(preprocessed: &str, assembly: &str, stage: &Stage, debug_mode: bool) -> std::io::Result<()> {
+    println!{"Compiling..."};
+    println!{"   Lexer"};
+    let mut result = lexer::lexer::lex(preprocessed, debug_mode);
     if result.is_err() || *stage == Stage::Lex {
-        return result;
+        return result.map(|_x|());
     }
+    println!{"   Parse"};
+    let result = parser::parser::parse(&mut result.unwrap(), debug_mode);
+    if result.is_err() || *stage == Stage::Parse {
+        return result.map(|_x|());
+    }
+    println!{"   Codegen"};
+    println!{"Done."};
     Ok(())
 }
 
@@ -35,6 +44,7 @@ fn main() -> std::io::Result<()> {
         Stage::All
     };
     let dump_assembly = args.iter().any(|x| x == "-S");
+    let debug_mode = args.iter().any(|x| x == "-D");
     let input = args.iter().find(|x| x.ends_with(".c"));
     //let input = &args[1];
     //if !input.ends_with(".c") {
@@ -58,7 +68,7 @@ fn main() -> std::io::Result<()> {
     let mut output = input.clone();
     output.pop();
     output.pop();
-    let result = compile(&preprocessed, &assembly, &stage);
+    let result = compile(&preprocessed, &assembly, &stage, debug_mode);
     if result.is_err() || stage != Stage::All {
         return result;
     }
