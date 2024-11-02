@@ -14,20 +14,25 @@ enum Stage {
     All,
 }
 
-fn compile(preprocessed: &str, assembly: &str, stage: &Stage, debug_mode: bool) -> std::io::Result<()> {
-    println!{"Compiling..."};
-    println!{"   Lexer"};
+fn compile(
+    preprocessed: &str,
+    assembly: &str,
+    stage: &Stage,
+    debug_mode: bool,
+) -> std::io::Result<()> {
+    println! {"Compiling..."};
+    println! {"   Lexer"};
     let mut result = lexer::lexer::lex(preprocessed, debug_mode);
     if result.is_err() || *stage == Stage::Lex {
-        return result.map(|_x|());
+        return result.map(|_x| ());
     }
-    println!{"   Parse"};
+    println! {"   Parse"};
     let result = parser::parser::parse(&mut result.unwrap(), debug_mode);
     if result.is_err() || *stage == Stage::Parse {
-        return result.map(|_x|());
+        return result.map(|_x| ());
     }
-    println!{"   Codegen"};
-    println!{"Done."};
+    println! {"   Codegen"};
+    println! {"Done."};
     Ok(())
 }
 
@@ -49,7 +54,7 @@ fn main() -> std::io::Result<()> {
     //let input = &args[1];
     //if !input.ends_with(".c") {
     if input.is_none() {
-        return  Err(Error::new(ErrorKind::InvalidInput, "Not a c file"));
+        return Err(Error::new(ErrorKind::InvalidInput, "Not a c file"));
     }
     let input = input.unwrap();
     let mut preprocessed = input.clone();
@@ -60,7 +65,6 @@ fn main() -> std::io::Result<()> {
     let cmd_output = Command::new("gcc")
         .args(["-E", "-P", input, "-o", &preprocessed])
         .output();
-
 
     let mut assembly = input.clone();
     assembly.pop();
@@ -74,7 +78,6 @@ fn main() -> std::io::Result<()> {
     }
     fs::remove_file(preprocessed)?;
 
-    
     println!("{}", assembly);
     println!("{}", output);
     let cmd_output = Command::new("gcc")

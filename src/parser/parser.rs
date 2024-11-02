@@ -9,15 +9,22 @@ pub enum Operations {
     //Statement,
     //Expression,
     Return,
-    Constant
+    Constant,
 }
 
 #[derive(Debug)]
 pub enum Node {
     Int(i32),
     Str(String),
-    Unary{op: Operations, node: Box<Node>},
-    Binary{op: Operations, lhs: Box<Node>, rhs: Box<Node>}
+    Unary {
+        op: Operations,
+        node: Box<Node>,
+    },
+    Binary {
+        op: Operations,
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
 }
 
 fn check_token(token: &Option<TokenValue>, token_type: Token) -> std::io::Result<()> {
@@ -47,14 +54,20 @@ fn int(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
 }
 
 fn exp(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
-    Ok(Box::new(Node::Unary { op: Operations::Constant, node: int(tokens)? }))
+    Ok(Box::new(Node::Unary {
+        op: Operations::Constant,
+        node: int(tokens)?,
+    }))
 }
 
 fn statement(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
     check_token(&tokens.pop_front(), Token::ReturnKeyword)?;
     let e = exp(tokens)?;
     check_token(&tokens.pop_front(), Token::Semicolon)?;
-    Ok(Box::new(Node::Unary { op: Operations::Return, node: e }))
+    Ok(Box::new(Node::Unary {
+        op: Operations::Return,
+        node: e,
+    }))
 }
 
 fn function(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
@@ -66,19 +79,31 @@ fn function(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
     check_token(&tokens.pop_front(), Token::OpenBrace)?;
     let s = statement(tokens)?;
     check_token(&tokens.pop_front(), Token::CloseBrace)?;
-    Ok(Box::new(Node::Binary { op: Operations::Function, lhs: i, rhs: s }))
+    Ok(Box::new(Node::Binary {
+        op: Operations::Function,
+        lhs: i,
+        rhs: s,
+    }))
 }
 
 fn program(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
     let f = function(tokens)?;
     if !tokens.is_empty() {
-        return Err(Error::new(ErrorKind::InvalidInput, "invalid top level identifer"));
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "invalid top level identifer",
+        ));
     }
-    Ok(Box::new(Node::Unary { op: Operations::Program, node: f }))
+    Ok(Box::new(Node::Unary {
+        op: Operations::Program,
+        node: f,
+    }))
 }
 
 pub fn parse(tokens: &mut VecDeque<TokenValue>, debug_mode: bool) -> std::io::Result<Box<Node>> {
     let p = program(tokens)?;
-    if (debug_mode) {println!("{:?}", p)};
+    if (debug_mode) {
+        println!("{:?}", p)
+    };
     Ok(p)
 }
