@@ -29,9 +29,15 @@ pub enum Node {
 
 fn check_token(token: &Option<TokenValue>, token_type: Token) -> std::io::Result<()> {
     if token.is_none() {
-        return Err(Error::new(ErrorKind::InvalidInput, "Missing token"));
+        let error = stringify!("Missing token, expected {?:}", token_type);
+        return Err(Error::new(ErrorKind::InvalidInput, error));
     } else if token.as_ref().unwrap().token != token_type {
-        return Err(Error::new(ErrorKind::InvalidInput, "Bad token"));
+        let error = stringify!(
+            "Bad token, found {?:}, but expected {?:}",
+            token.as_ref().unwrap.token,
+            token_type
+        );
+        return Err(Error::new(ErrorKind::InvalidInput, error));
     }
     Ok(())
 }
