@@ -46,16 +46,6 @@ impl Token {
         }
     }
 
-    fn sorted_by_size() -> [Self; 10] {
-        let mut values = Token::VALUES.clone();
-        values.sort_by(|a, b| b.expr().len().cmp(&a.expr().len()));
-        return values;
-    }
-
-    fn sorted_as_regex() -> [(Token, Regex); 10] {
-        Token::sorted_by_size().map(|x| (x, Regex::new(x.expr()).unwrap()))
-    }
-
     fn regex() -> [(Token, Regex); 10] {
         Token::VALUES
             .clone()

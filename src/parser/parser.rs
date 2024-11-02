@@ -102,7 +102,7 @@ fn program(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
 
 pub fn parse(tokens: &mut VecDeque<TokenValue>, debug_mode: bool) -> std::io::Result<Box<Node>> {
     let p = program(tokens)?;
-    if (debug_mode) {
+    if debug_mode {
         println!("{:?}", p)
     };
     Ok(p)

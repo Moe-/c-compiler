@@ -16,13 +16,13 @@ enum Stage {
 
 fn compile(
     preprocessed: &str,
-    assembly: &str,
+    _assembly: &str,
     stage: &Stage,
     debug_mode: bool,
 ) -> std::io::Result<()> {
     println! {"Compiling..."};
     println! {"   Lexer"};
-    let mut result = lexer::lexer::lex(preprocessed, debug_mode);
+    let result = lexer::lexer::lex(preprocessed, debug_mode);
     if result.is_err() || *stage == Stage::Lex {
         return result.map(|_x| ());
     }
@@ -62,9 +62,9 @@ fn main() -> std::io::Result<()> {
     preprocessed += "i";
     println!("{}", input);
     println!("{}", preprocessed);
-    let cmd_output = Command::new("gcc")
+    let _cmd_output = Command::new("gcc")
         .args(["-E", "-P", input, "-o", &preprocessed])
-        .output();
+        .output()?;
 
     let mut assembly = input.clone();
     assembly.pop();
@@ -80,9 +80,9 @@ fn main() -> std::io::Result<()> {
 
     println!("{}", assembly);
     println!("{}", output);
-    let cmd_output = Command::new("gcc")
+    let _cmd_output = Command::new("gcc")
         .args([&assembly, "-o", &output])
-        .output();
+        .output()?;
     if !dump_assembly {
         fs::remove_file(assembly)?;
     }
