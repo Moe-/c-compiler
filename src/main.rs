@@ -3,6 +3,7 @@ use std::fs;
 use std::io::{Error, ErrorKind};
 use std::process::Command;
 
+pub mod assembly;
 pub mod lexer;
 pub mod parser;
 
@@ -16,7 +17,7 @@ enum Stage {
 
 fn compile(
     preprocessed: &str,
-    _assembly: &str,
+    assembly: &str,
     stage: &Stage,
     debug_mode: bool,
 ) -> std::io::Result<()> {
@@ -32,6 +33,7 @@ fn compile(
         return result.map(|_x| ());
     }
     println! {"   Codegen"};
+    assembly::generator::generate(&result.unwrap(), assembly, debug_mode)?;
     println! {"Done."};
     Ok(())
 }
