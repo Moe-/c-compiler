@@ -15,10 +15,13 @@ pub enum Token {
     OpenBrace,
     CloseBrace,
     Semicolon,
+    Tilde,
+    Hyphen,
+    TwoHyphens,
 }
 
 impl Token {
-    const VALUES: [Self; 10] = [
+    const VALUES: [Self; 13] = [
         Self::Identifier,
         Self::Constant,
         Self::IntKeyword,
@@ -29,6 +32,9 @@ impl Token {
         Self::OpenBrace,
         Self::CloseBrace,
         Self::Semicolon,
+        Self::Tilde,
+        Self::Hyphen,
+        Self::TwoHyphens,
     ];
 
     fn expr(&self) -> &str {
@@ -43,10 +49,13 @@ impl Token {
             Token::OpenBrace => r"\{",
             Token::CloseBrace => r"\}",
             Token::Semicolon => r";",
+            Token::Tilde => r"~",
+            Token::Hyphen => r"-",
+            Token::TwoHyphens => r"--",
         }
     }
 
-    fn regex() -> [(Token, Regex); 10] {
+    fn regex() -> [(Token, Regex); 13] {
         Token::VALUES
             .clone()
             .map(|x| (x, Regex::new(x.expr()).unwrap()))

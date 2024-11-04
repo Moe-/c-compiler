@@ -10,6 +10,9 @@ pub enum Operations {
     //Expression,
     Return,
     Constant,
+    Unary,
+    Complement,
+    Negate,
 }
 
 #[derive(Debug)]
@@ -59,11 +62,35 @@ fn int(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
     Ok(Box::new(Node::Int(int.unwrap())))
 }
 
+fn unop(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Operations> {
+    let token = tokens.pop_front().ok_or(Error::new(ErrorKind::InvalidInput, "Missing unop operator"))?;
+    match token.token {
+        Token::Hyphen => Ok(Operations::Negate),
+        Token::Tilde => Ok(Operations::Complement),
+        _ => Err(Error::new(ErrorKind::InvalidInput, "Bad unop")),
+    }
+}
+
 fn exp(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
-    Ok(Box::new(Node::Unary {
-        op: Operations::Constant,
-        node: int(tokens)?,
-    }))
+    let next = tokens.front().ok_or(Error::new(ErrorKind::InvalidInput, "Missing exp token"))?;
+    match next.token {
+        Token::Constant => Ok(Box::new(Node::Unary {
+            op: Operations::Constant,
+            node: int(tokens)?,
+        })),
+        Token::Hyphen | Token::Tilde => {
+            let op = unop(tokens)?;
+            let exp = exp(tokens)?;
+            Ok(Box::new(Node::Unary { op: op, node: exp }))
+        },
+        Token::OpenParenthesis => {
+            check_token(&tokens.pop_front(), Token::OpenParenthesis)?;
+            let res = exp(tokens);
+            check_token(&tokens.pop_front(), Token::CloseParenthesis)?;
+            res
+        }
+        _ => Err(Error::new(ErrorKind::InvalidInput, "Unknown expression")),
+    }
 }
 
 fn statement(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
