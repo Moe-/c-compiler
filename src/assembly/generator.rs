@@ -1,3 +1,4 @@
+use crate::assembly::emission::emit;
 use crate::parser::parser::Node;
 use std::collections::VecDeque;
 use std::io::{Error, ErrorKind};
@@ -17,6 +18,7 @@ pub enum AssemblyOperations {
 pub enum AssemblyNode {
     Int(i32),
     Str(String),
+    Register,
     Terminal {
         op: AssemblyOperations,
     },
@@ -46,7 +48,7 @@ pub fn convert_ast(ast: &Box<Node>) -> std::io::Result<Box<AssemblyNode>> {
                     Box::new(AssemblyNode::Binary {
                         op: AssemblyOperations::Mov,
                         lhs: convert_ast(node)?,
-                        rhs: Box::new(AssemblyNode::Str(String::from("EAX"))),
+                        rhs: Box::new(AssemblyNode::Register),
                     }),
                     Box::new(AssemblyNode::Terminal {
                         op: AssemblyOperations::Return,
@@ -76,10 +78,11 @@ pub fn convert_ast(ast: &Box<Node>) -> std::io::Result<Box<AssemblyNode>> {
     }
 }
 
-pub fn generate(ast: &Box<Node>, _assembly: &str, debug_mode: bool) -> std::io::Result<()> {
+pub fn generate(ast: &Box<Node>, assembly: &str, debug_mode: bool) -> std::io::Result<()> {
     let res = convert_ast(ast)?;
     if debug_mode {
         println!("{:?}", res)
     };
+    emit(&res, assembly, debug_mode)?;
     Ok(())
 }
