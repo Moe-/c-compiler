@@ -11,6 +11,7 @@ pub mod parser;
 enum Stage {
     Lex,
     Parse,
+    Intermediate,
     Codegen,
     All,
 }
@@ -32,6 +33,13 @@ fn compile(
     if result.is_err() || *stage == Stage::Parse {
         return result.map(|_x| ());
     }
+    if *stage == Stage::Intermediate {
+        println! {"   Intermediate"};
+        let result = parser::intermediate::intermediate(&mut result.as_ref().unwrap(), debug_mode);
+        if result.is_err() || *stage == Stage::Intermediate {
+            return result.map(|_x| ());
+        }
+    }
     println! {"   Codegen"};
     assembly::generator::generate(&result.unwrap(), assembly, debug_mode)?;
     println! {"Done."};
@@ -45,6 +53,8 @@ fn main() -> std::io::Result<()> {
         Stage::Lex
     } else if args.iter().any(|x| x == "--parse") {
         Stage::Parse
+    } else if args.iter().any(|x| x == "--tacky") {
+        Stage::Intermediate
     } else if args.iter().any(|x| x == "--codegen") {
         Stage::Codegen
     } else {
