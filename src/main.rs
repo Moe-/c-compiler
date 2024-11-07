@@ -33,12 +33,10 @@ fn compile(
     if result.is_err() || *stage == Stage::Parse {
         return result.map(|_x| ());
     }
-    if *stage == Stage::Intermediate {
-        println! {"   Intermediate"};
-        let result = parser::intermediate::intermediate(&mut result.as_ref().unwrap(), debug_mode);
-        if result.is_err() || *stage == Stage::Intermediate {
-            return result.map(|_x| ());
-        }
+    println! {"   Intermediate"};
+    let result = parser::intermediate::intermediate(&mut result.as_ref().unwrap(), debug_mode);
+    if result.is_err() || *stage == Stage::Intermediate {
+        return result.map(|_x| ());
     }
     println! {"   Codegen"};
     assembly::generator::generate(&result.unwrap(), assembly, debug_mode)?;

@@ -18,9 +18,6 @@ pub enum IntermediateOperations {
 pub enum IntermediateNode {
     Int(i32),
     Str(String),
-    Terminal {
-        op: IntermediateOperations,
-    },
     Unary {
         op: IntermediateOperations,
         node: Box<IntermediateNode>,

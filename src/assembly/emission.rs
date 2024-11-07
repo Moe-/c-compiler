@@ -8,7 +8,7 @@ fn convert_aast(aast: &Box<AssemblyNode>) -> std::io::Result<String> {
     match &**aast {
         AssemblyNode::Int(x) => output += format!("${x}").as_str(),
         AssemblyNode::Str(x) => output += x,
-        AssemblyNode::Register => output += "%eax",
+        AssemblyNode::Register(_) => output += "%eax",
         AssemblyNode::Terminal { op } => match op {
             super::generator::AssemblyOperations::Return => output += "    ret\n",
             _ => {
