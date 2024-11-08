@@ -39,7 +39,13 @@ fn compile(
         return result.map(|_x| ());
     }
     println! {"   Codegen"};
-    assembly::generator::generate(&result.unwrap(), assembly, debug_mode)?;
+    let result = assembly::generator::generate(&result.unwrap(), debug_mode);
+    if result.is_err() || *stage == Stage::Codegen {
+        return result.map(|_x| ());
+    }
+    println! {"   Emit"};
+    assembly::emission::emit(&result.unwrap(), assembly, debug_mode)?;
+
     println! {"Done."};
     Ok(())
 }

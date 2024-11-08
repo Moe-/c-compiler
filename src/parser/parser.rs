@@ -63,7 +63,9 @@ fn int(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
 }
 
 fn unop(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Operations> {
-    let token = tokens.pop_front().ok_or(Error::new(ErrorKind::InvalidInput, "Missing unop operator"))?;
+    let token = tokens
+        .pop_front()
+        .ok_or(Error::new(ErrorKind::InvalidInput, "Missing unop operator"))?;
     match token.token {
         Token::Hyphen => Ok(Operations::Negate),
         Token::Tilde => Ok(Operations::Complement),
@@ -72,7 +74,9 @@ fn unop(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Operations> {
 }
 
 fn exp(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
-    let next = tokens.front().ok_or(Error::new(ErrorKind::InvalidInput, "Missing exp token"))?;
+    let next = tokens
+        .front()
+        .ok_or(Error::new(ErrorKind::InvalidInput, "Missing exp token"))?;
     match next.token {
         Token::Constant => Ok(Box::new(Node::Unary {
             op: Operations::Constant,
@@ -82,7 +86,7 @@ fn exp(tokens: &mut VecDeque<TokenValue>) -> std::io::Result<Box<Node>> {
             let op = unop(tokens)?;
             let exp = exp(tokens)?;
             Ok(Box::new(Node::Unary { op: op, node: exp }))
-        },
+        }
         Token::OpenParenthesis => {
             check_token(&tokens.pop_front(), Token::OpenParenthesis)?;
             let res = exp(tokens);
