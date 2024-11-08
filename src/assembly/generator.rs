@@ -1,6 +1,6 @@
 use crate::assembly::emission::emit;
 use crate::parser::intermediate::{IntermediateNode, IntermediateOperations};
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::io::{Error, ErrorKind};
 
 #[derive(Debug,Clone)]
@@ -16,7 +16,6 @@ pub enum AssemblyOperations {
     Neg,
     Not,
     Pseudo,
-    Stack,
 }
 
 #[derive(Debug,Clone)]
@@ -30,6 +29,7 @@ pub enum AssemblyNode {
     Int(i32),
     Str(String),
     Register(AssemblyRegister),
+    Stack(i64),
     Terminal {
         op: AssemblyOperations,
     },
@@ -125,11 +125,59 @@ pub fn convert_ast(ast: &Box<IntermediateNode>) -> std::io::Result<Box<AssemblyN
     }
 }
 
+pub fn process_stack(aast: &mut Box<AssemblyNode>, stack_map:  &mut HashMap<String, i64>) -> Result<(), Error> {
+    match &mut **aast {
+        AssemblyNode::Int(_) => Ok(()),
+        AssemblyNode::Str(_) => Ok(()),
+        AssemblyNode::Register(_) => Ok(()),
+        AssemblyNode::Stack(_) => Err(Error::new(ErrorKind::InvalidInput, "There should be no stack in AAST yet")),
+        AssemblyNode::Terminal{ op: _} => Ok(()),
+        AssemblyNode::Unary { op, node } => {
+            match op {
+                AssemblyOperations::Pseudo => {
+                    let pseudo_name = match &**node {
+                        AssemblyNode::Str(x) => x.clone(),
+                        _ => return Err(Error::new(ErrorKind::InvalidInput, "Pseudo must reference Str in AAST")),
+                    };
+                    if !stack_map.contains_key(&pseudo_name) {
+                        stack_map.insert(pseudo_name.clone(), -4i64 * (stack_map.len() as i64 + 1i64));
+                    }
+                    *aast = Box::new(AssemblyNode::Stack(stack_map[&pseudo_name]));
+                },
+                _ => {
+                    process_stack( node, stack_map)?;
+                },
+            };
+            Ok(())
+        },
+        AssemblyNode::Binary { op: _, lhs, rhs } => {
+            process_stack(lhs, stack_map)?;
+            process_stack(rhs, stack_map)?;
+            Ok(())
+        },
+        AssemblyNode::Sequence(vec_deque) => {
+            vec_deque.iter_mut().for_each(|x|{process_stack(x, stack_map).unwrap();});
+            Ok(())
+        },
+    }
+}
+
 pub fn generate(ast: &Box<IntermediateNode>, assembly: &str, debug_mode: bool) -> std::io::Result<()> {
-    let res = convert_ast(ast)?;
+    let mut res = convert_ast(ast)?;
+
+    println!("    - Convert");
     if debug_mode {
-        println!("{:?}", res)
-    };
+        println!("{:?}", res);
+    }
+
+    let mut stack_map: HashMap<String, i64> = HashMap::new();
+    let _ = process_stack(&mut res, &mut stack_map)?;
+    println!("    - Stack update");
+    if debug_mode {
+        println!("{:?}", res);
+    }
+
+
     emit(&res, assembly, debug_mode)?;
     Ok(())
 }

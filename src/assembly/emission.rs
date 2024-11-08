@@ -53,6 +53,9 @@ fn convert_aast(aast: &Box<AssemblyNode>) -> std::io::Result<String> {
                 output += convert_aast(x)?.as_str();
             }
         }
+        AssemblyNode::Stack(_) => {
+            // TODO
+        }
     }
 
     Ok(output)
