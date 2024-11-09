@@ -11,7 +11,6 @@ pub enum AssemblyOperations {
     Return,
     Imm,
     Mov,
-    AllocateStack,
     Neg,
     Not,
     Pseudo,
@@ -29,6 +28,7 @@ pub enum AssemblyNode {
     Str(String),
     Register(AssemblyRegister),
     Stack(i64),
+    AllocateStack(i64),
     Terminal {
         op: AssemblyOperations,
     },
@@ -142,6 +142,7 @@ pub fn process_stack(
         AssemblyNode::Int(_) => Ok(()),
         AssemblyNode::Str(_) => Ok(()),
         AssemblyNode::Register(_) => Ok(()),
+        AssemblyNode::AllocateStack(_) => Ok(()),
         AssemblyNode::Stack(_) => Err(Error::new(
             ErrorKind::InvalidInput,
             "There should be no stack in AAST yet",
@@ -185,11 +186,32 @@ pub fn process_stack(
     }
 }
 
+pub fn find_stack_size(aast: &mut Box<AssemblyNode>) -> i64 {
+    return match &mut **aast {
+        AssemblyNode::Int(_) => 0i64,
+        AssemblyNode::Str(_) => 0i64,
+        AssemblyNode::Register(_) => 0i64,
+        AssemblyNode::Stack(x) => -*x,
+        AssemblyNode::AllocateStack(_) => 0i64,
+        AssemblyNode::Terminal { op: _ } => 0i64,
+        AssemblyNode::Unary { op: _, node } => find_stack_size(node),
+        AssemblyNode::Binary { op: _, lhs, rhs } => find_stack_size(lhs).max(find_stack_size(rhs)),
+        AssemblyNode::Sequence(vec_deque) => {
+            let mut stack_size = 0i64;
+            for x in vec_deque {
+                stack_size = stack_size.max(find_stack_size(x));
+            }
+            stack_size
+        }
+    };
+}
+
 pub fn fix_instructions(aast: &mut Box<AssemblyNode>) -> Result<(), Error> {
     match &mut **aast {
         AssemblyNode::Int(_) => Ok(()),
         AssemblyNode::Str(_) => Ok(()),
         AssemblyNode::Register(_) => Ok(()),
+        AssemblyNode::AllocateStack(_) => Ok(()),
         AssemblyNode::Stack(_) => Err(Error::new(
             ErrorKind::InvalidInput,
             "There should be no stack in AAST yet",
@@ -207,11 +229,9 @@ pub fn fix_instructions(aast: &mut Box<AssemblyNode>) -> Result<(), Error> {
         AssemblyNode::Sequence(vec_deque) => {
             let mut stack_size = 0i64;
             vec_deque.iter_mut().for_each(|x| {
-                match &**x {
-                    AssemblyNode::Stack(pos) => stack_size = stack_size.max(-*pos),
-                    _ => { /* Skip */ }
-                }
+                stack_size = stack_size.max(find_stack_size(x));
             });
+            vec_deque.push_front(Box::new(AssemblyNode::AllocateStack(stack_size)));
             let mut i = 0;
             while i < vec_deque.len() {
                 match &mut *vec_deque[i] {
